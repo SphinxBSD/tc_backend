@@ -3,6 +3,7 @@ const { createUsuario, findUsuarioByUsername } = require('../models/usuario');
 const { getRoles, assignRoleToUser } = require('../models/rol');
 const { hashPassword } = require('../utils/hashPassword');
 const { sendRegistrationEmail } = require('../services/emailService');
+const pool = require('../config/db'); 
 
 const registerUser = async (req, res) => {
   try {
@@ -40,4 +41,55 @@ const registerUser = async (req, res) => {
   }
 };
 
-module.exports = { registerUser };
+// Obtener el perfil del usuario
+const getUserProfile = async (req, res) => {
+  try {
+    const userId = req.user.id_usuario;  // Suponiendo que el middleware de autenticación ya ha validado el token
+
+    const userQuery = `
+      SELECT u.id_usuario, u.username, u.email, p.nombre, p.paterno, p.materno, p.fecha_nac, p.direccion,
+             GROUP_CONCAT(r.nombre_rol) AS roles
+      FROM usuario u
+      JOIN persona p ON u.id_persona = p.id_persona
+      LEFT JOIN usuario_rol ur ON u.id_usuario = ur.id_usuario
+      LEFT JOIN rol r ON ur.id_rol = r.id_rol
+      WHERE u.id_usuario = ?
+      GROUP BY u.id_usuario;
+    `;
+    
+    const [userRows] = await pool.query(userQuery, [userId]);
+
+    if (userRows.length === 0) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    res.json(userRows[0]);
+  } catch (error) {
+    console.error('Error al obtener el perfil del usuario:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
+
+// Editar el perfil del usuario
+const updateUserProfile = async (req, res) => {
+  try {
+    const userId = req.user.id_usuario;
+    const { nombre, paterno, materno, fecha_nac, direccion } = req.body;
+
+    const updateQuery = `
+      UPDATE persona
+      SET nombre = ?, paterno = ?, materno = ?, fecha_nac = ?, direccion = ?
+      WHERE id_persona = (SELECT id_persona FROM usuario WHERE id_usuario = ?)
+    `;
+
+    await pool.query(updateQuery, [nombre, paterno, materno, fecha_nac, direccion, userId]);
+
+    res.json({ message: 'Perfil actualizado con éxito' });
+  } catch (error) {
+    console.error('Error al actualizar el perfil del usuario:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
+
+
+module.exports = { registerUser,  getUserProfile, updateUserProfile };

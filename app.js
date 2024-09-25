@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const userRoutes = require('./routes/userRoutes');
 const authRoutes = require('./routes/authRoutes');
+const comunidadRoutes = require('./routes/comunidadRoutes');
 const pool = require('./config/db'); 
 const cors = require('cors');
 
@@ -11,21 +12,15 @@ app.use(cors());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/comunidad', comunidadRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-// Probar la conexión a la base de datos
-const testDBConnection = async () => {
-    try {
-      const connection = await pool.getConnection();
-      console.log('Conexión exitosa a la base de datos');
-    } catch (error) {
-      console.error('Error al conectarse a la base de datos:', error.message);
-    }
-  };
-  
-// Llamar a la función para probar la conexión
-testDBConnection();
+// Middlewares
+app.use(express.json()); // Para parsear JSON
+app.use('/uploads', express.static('uploads')); // Para servir los archivos PDF subidos
+
+
