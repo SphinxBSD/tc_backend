@@ -19,5 +19,6 @@ const upload = multer({ storage });
 
 // Ruta para registrar una comunidad
 router.post('/registrar', authenticateToken, upload.single('documento'), registerComunidad);
+// router.get('/comunidades', authenticateToken, getAllComunidades);
 
 module.exports = router;

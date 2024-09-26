@@ -7,7 +7,7 @@ const pool = require('../config/db');
 
 const registerUser = async (req, res) => {
   try {
-    const { ci, nombre, paterno, materno, fecha_nac, direccion, username, email, password, id_rol } = req.body;
+    const { ci, nombre, paterno, materno, fecha_nac, direccion, telefono, username, email, password, id_rol } = req.body;
 
     // Validar si el username ya existe
     const existingUser = await findUsuarioByUsername(username);
@@ -16,7 +16,7 @@ const registerUser = async (req, res) => {
     }
 
     // Crear la persona
-    const id_persona = await createPersona({ ci, nombre, paterno, materno, fecha_nac, direccion });
+    const id_persona = await createPersona({ ci, nombre, paterno, materno, fecha_nac, direccion, telefono });
 
     // Encriptar la contraseña
     const hashedPassword = await hashPassword(password);
@@ -47,7 +47,7 @@ const getUserProfile = async (req, res) => {
     const userId = req.user.id_usuario;  // Suponiendo que el middleware de autenticación ya ha validado el token
 
     const userQuery = `
-      SELECT u.id_usuario, u.username, u.email, p.nombre, p.paterno, p.materno, p.fecha_nac, p.direccion,
+      SELECT u.id_usuario, u.username, u.email, p.nombre, p.paterno, p.materno, p.fecha_nac, p.direccion, p.telefono,
              GROUP_CONCAT(r.nombre_rol) AS roles
       FROM usuario u
       JOIN persona p ON u.id_persona = p.id_persona
@@ -78,7 +78,7 @@ const updateUserProfile = async (req, res) => {
 
     const updateQuery = `
       UPDATE persona
-      SET nombre = ?, paterno = ?, materno = ?, fecha_nac = ?, direccion = ?
+      SET nombre = ?, paterno = ?, materno = ?, fecha_nac = ?, direccion = ?, telefono = ?
       WHERE id_persona = (SELECT id_persona FROM usuario WHERE id_usuario = ?)
     `;
 
