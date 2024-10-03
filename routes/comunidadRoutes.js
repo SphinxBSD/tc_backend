@@ -1,6 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { registerComunidad } = require('../controllers/comunidadController');
+const { 
+    registerComunidad,
+    getComunidadesByUsuario,
+    getAllComunidades,
+    solicitarIngreso,
+    getAllSolicitudesByUser,
+    approveRequest
+ } = require('../controllers/comunidadController');
 const { authenticateToken } = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
@@ -20,5 +27,17 @@ const upload = multer({ storage });
 // Ruta para registrar una comunidad
 router.post('/registrar', authenticateToken, upload.single('documento'), registerComunidad);
 // router.get('/comunidades', authenticateToken, getAllComunidades);
+
+// Nueva ruta para obtener las comunidades asociadas a un usuario
+router.get('/comunidades/usuario', authenticateToken, getComunidadesByUsuario);
+
+router.get('/comunidades', authenticateToken, getAllComunidades)
+
+router.post('/solicitar', authenticateToken, solicitarIngreso);
+
+router.get('/solicitudes/usuario', authenticateToken, getAllSolicitudesByUser);
+
+// Ruta para aprobar una solicitud
+router.post('/approve-request', authenticateToken, approveRequest);
 
 module.exports = router;
