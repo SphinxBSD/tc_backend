@@ -25,5 +25,6 @@ module.exports = {
   query: (sql, params) => pool.execute(sql, params),
   beginTransaction: () => pool.query('START TRANSACTION'),
   commit: () => pool.query('COMMIT'),
-  rollback: () => pool.query('ROLLBACK')
+  rollback: () => pool.query('ROLLBACK'),
+  
 };

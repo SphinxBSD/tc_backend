@@ -74,7 +74,7 @@ const getUserProfile = async (req, res) => {
 const updateUserProfile = async (req, res) => {
   try {
     const userId = req.user.id_usuario;
-    const { nombre, paterno, materno, fecha_nac, direccion } = req.body;
+    const { nombre, paterno, materno, fecha_nac, direccion, telefono } = req.body;
 
     const updateQuery = `
       UPDATE persona
@@ -82,7 +82,7 @@ const updateUserProfile = async (req, res) => {
       WHERE id_persona = (SELECT id_persona FROM usuario WHERE id_usuario = ?)
     `;
 
-    await pool.query(updateQuery, [nombre, paterno, materno, fecha_nac, direccion, userId]);
+    await pool.query(updateQuery, [nombre, paterno, materno, fecha_nac, direccion, telefono, userId]);
 
     res.json({ message: 'Perfil actualizado con éxito' });
   } catch (error) {

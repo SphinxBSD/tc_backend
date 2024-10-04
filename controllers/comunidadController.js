@@ -28,7 +28,7 @@ const registerComunidad = async (req, res) => {
         // Relacionar el usuario con la comunidad en la tabla "usuario_comunidad"
         await pool.query(
             'INSERT INTO usuario_comunidad (id_usuario, id_comunidad, estado) VALUES (?, ?, ?)',
-            [id_usuario, id_comunidad, 'activo']
+            [id_usuario, id_comunidad, 'encargado']
         );
 
         // Confirmar la transacción
@@ -65,13 +65,24 @@ const getComunidadesByUsuario = async (req, res) => {
     const idUsuario = req.user.id_usuario;  // Obtenemos el id_usuario desde el token
 
     try {
+
+        const [rol] = await pool.query(
+            `
+            SELECT r.nombre_rol
+            FROM rol r
+            INNER JOIN usuario_rol ur ON ur.id_rol = r.id_rol
+            WHERE ur.id_usuario = ?
+            `,
+            [idUsuario]
+        );
+        console.log(rol[0].nombre_rol);
         // Consulta para obtener las comunidades asociadas al usuario
         const [comunidades] = await pool.query(
             `SELECT c.*
              FROM comunidad c
              JOIN usuario_comunidad uc ON c.id_comunidad = uc.id_comunidad
-             WHERE uc.id_usuario = ? AND uc.estado = 'encargado'`, 
-             [idUsuario]
+             WHERE uc.id_usuario = ? AND uc.estado = ?`, 
+             [idUsuario, rol[0].nombre_rol]
         );
 
         // Verificar si el usuario está relacionado con alguna comunidad

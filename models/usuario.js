@@ -15,28 +15,30 @@ const findUsuarioByUsername = async (username) => {
 
 // Función para buscar usuario por username y email
 const findUsuarioByUsernameAndEmail = async (username, email) => {
-  const connection = await pool.getConnection();
+  // const connection = await pool.getConnection();
   try {
-    const [rows] = await connection.query(
+    const [rows] = await pool.query(
       'SELECT * FROM usuario WHERE username = ? AND email = ?',
       [username, email]
     );
     return rows.length > 0 ? rows[0] : null;
   } finally {
-    connection.release();
+    // connection.release();
+    console.log('Conexión liberada');
   }
 };
 
 // Función para actualizar la contraseña de un usuario
 const updatePassword = async (id_usuario, newPassword) => {
-  const connection = await pool.getConnection();
+  // const connection = await pool.getConnection();
   try {
-    await connection.query(
+    await pool.query(
       'UPDATE usuario SET password = ? WHERE id_usuario = ?',
       [newPassword, id_usuario]
     );
   } finally {
-    connection.release();
+    // connection.release();
+    console.log('Conexión liberada');
   }
 };
 
