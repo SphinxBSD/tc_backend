@@ -7,7 +7,8 @@ const pool = require('../config/db');
 const { registerProduct,
     getCategorias,
     getElaboraciones,
-    getProductos
+    getProductos,
+    getProductosByUser
  } = require('../controllers/productoController');
 
 // Configuración de Multer para subir fotos
@@ -48,5 +49,8 @@ router.get('/elaboraciones', getElaboraciones);
 
 // Obtener productos
 router.get('/mostrar', getProductos);
+
+// Obtener productos
+router.get('/mostrarByUser', authenticateToken, getProductosByUser);
 
 module.exports = router;
