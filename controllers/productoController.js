@@ -302,12 +302,11 @@ const editarProducto = async (req, res) => {
   }
 };
 
-
   module.exports = {
     registerProduct,
     getCategorias,
     getElaboraciones,
     getProductos,
     getProductosByUser,
-    editarProducto
+    editarProducto,
 };
