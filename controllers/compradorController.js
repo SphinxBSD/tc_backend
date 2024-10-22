@@ -52,7 +52,64 @@ const confirmarCompra = async (req, res) => {
 };
 
 
+// Obtener historial de compras del usuario
+const obtenerHistorialCompras = async (req, res) => {
+    const id_usuario = req.user.id_usuario; // Obtenemos el id del usuario autenticado
+  
+    try {
+      // Consultar los pedidos realizados por el usuario
+      const [pedidos] = await pool.query(
+        `SELECT p.id_pedido, p.fecha_pedido, p.total, dp.id_producto, dp.cantidad, dp.precio_unitario, pr.nombre_producto
+        FROM pedidos p
+        INNER JOIN detalle_pedido dp ON dp.id_pedido = p.id_pedido
+        INNER JOIN producto pr ON pr.id_producto = dp.id_producto
+        WHERE p.id_usuario = ?
+        ORDER BY p.fecha_pedido DESC`,
+        [id_usuario]
+      );
+  
+      if (pedidos.length === 0) {
+        return res.status(404).json({ message: 'No se encontraron compras para este usuario' });
+      }
+  
+      // Estructurar los datos agrupando por id_pedido
+      const historial = pedidos.reduce((acc, pedido) => {
+        const { id_pedido, fecha_pedido, total, id_producto, cantidad, precio_unitario, nombre_producto } = pedido;
+        
+        // Si el pedido no existe en el acumulador, lo añadimos con sus detalles
+        if (!acc[id_pedido]) {
+          acc[id_pedido] = {
+            id_pedido,
+            fecha_pedido,
+            total,
+            productos: []
+          };
+        }
+  
+        // Agregar el producto al pedido correspondiente
+        acc[id_pedido].productos.push({
+          id_producto,
+          nombre_producto,
+          cantidad,
+          precio_unitario
+        });
+  
+        return acc;
+      }, {});
+  
+      // Convertir el objeto en un array de pedidos
+      const historialArray = Object.values(historial);
+  
+      res.json(historialArray);
+    } catch (error) {
+      console.error('Error al obtener historial de compras:', error);
+      res.status(500).json({ message: 'Error al obtener el historial de compras' });
+    }
+  };
+
+
 module.exports = {
-    confirmarCompra
+    confirmarCompra,
+    obtenerHistorialCompras
     
 }

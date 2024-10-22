@@ -91,5 +91,37 @@ const updateUserProfile = async (req, res) => {
   }
 };
 
+// Obtener lista de todos los usuarios
+const getUsuarios = async (req, res) => {
+  try {
+      const usuariosQuery = `
+          SELECT u.id_usuario, u.username, u.email, p.nombre, p.paterno, p.materno
+          FROM usuario u
+          LEFT JOIN persona p ON u.id_persona = p.id_persona
+          WHERE u.estado = 'activo';`;
 
-module.exports = { registerUser,  getUserProfile, updateUserProfile };
+      const [usuarios] = await pool.query(usuariosQuery);
+      res.json(usuarios);
+  } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Error al obtener los usuarios" });
+  }
+};
+
+// Eliminar un usuario por su id
+const deleteUsuario = async (req, res) => {
+  const { id_usuario } = req.params;
+
+  try {
+    const updateQuery = 'UPDATE usuario SET estado = ? WHERE id_usuario = ?';
+    await pool.query(updateQuery, ['eliminado', id_usuario]);
+    res.json({ message: "Usuario marcado como eliminado" });
+  } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Error al eliminar el usuario" });
+  }
+};
+
+
+module.exports = { 
+  registerUser,  getUserProfile, updateUserProfile, getUsuarios, deleteUsuario};

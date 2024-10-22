@@ -211,11 +211,60 @@ const approveRequest = async (req, res) => {
 };
 
 
+// Función para listar todas las comunidades con sus artesanos
+const getComunidadesConArtesanos = async (req, res) => {
+    try {
+        const comunidadesQuery = `
+            SELECT c.id_comunidad, c.nombre, c.departamento, c.provincia, c.municipio, c.pdf_url,
+                   p.id_persona, p.nombre AS persona_nombre, p.paterno, p.materno
+            FROM comunidad c
+            LEFT JOIN usuario_comunidad uc ON c.id_comunidad = uc.id_comunidad
+            LEFT JOIN usuario u ON uc.id_usuario = u.id_usuario
+            LEFT JOIN persona p ON u.id_persona = p.id_persona
+            WHERE uc.estado = 'artesano';`;
+
+        const [rows] = await pool.query(comunidadesQuery);
+        
+        const comunidadesMap = {};
+
+        rows.forEach(row => {
+            if (!comunidadesMap[row.id_comunidad]) {
+                comunidadesMap[row.id_comunidad] = {
+                    id_comunidad: row.id_comunidad,
+                    nombre: row.nombre,
+                    departamento: row.departamento,
+                    provincia: row.provincia,
+                    municipio: row.municipio,
+                    pdf_url: row.pdf_url,
+                    artesanos: []
+                };
+            }
+
+            if (row.id_persona) {
+                comunidadesMap[row.id_comunidad].artesanos.push({
+                    id_persona: row.id_persona,
+                    nombre: row.persona_nombre,
+                    paterno: row.paterno,
+                    materno: row.materno
+                });
+            }
+        });
+
+        const comunidades = Object.values(comunidadesMap);
+        res.json(comunidades);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Error al obtener las comunidades" });
+    }
+};
+
+
 module.exports = {
     registerComunidad,
     getAllComunidades,
     getComunidadesByUsuario,
     solicitarIngreso,
     getAllSolicitudesByUser,
-    approveRequest
+    approveRequest,
+    getComunidadesConArtesanos
 };

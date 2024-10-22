@@ -6,7 +6,8 @@ const {
     getAllComunidades,
     solicitarIngreso,
     getAllSolicitudesByUser,
-    approveRequest
+    approveRequest,
+    getComunidadesConArtesanos
  } = require('../controllers/comunidadController');
 const { authenticateToken } = require('../middleware/auth');
 const multer = require('multer');
@@ -39,5 +40,7 @@ router.get('/solicitudes/usuario', authenticateToken, getAllSolicitudesByUser);
 
 // Ruta para aprobar una solicitud
 router.post('/approve-request', authenticateToken, approveRequest);
+
+router.get('/infocomunidades', getComunidadesConArtesanos);
 
 module.exports = router;
