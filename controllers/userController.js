@@ -108,6 +108,25 @@ const getUsuarios = async (req, res) => {
   }
 };
 
+// Obtener lista de todos los usuarios deliverys
+const getUsuariosDelivery = async (req, res) => {
+  try {
+      const usuariosQuery = `
+          SELECT u.id_usuario, u.username, u.email, p.nombre, p.paterno, p.materno
+          FROM usuario u
+          LEFT JOIN persona p ON u.id_persona = p.id_persona
+          INNER JOIN usuario_rol ur ON ur.id_usuario = u.id_usuario
+          WHERE u.estado = 'activo'
+          AND ur.id_rol = 5;`;
+
+      const [usuarios] = await pool.query(usuariosQuery);
+      res.json(usuarios);
+  } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Error al obtener los deliverys" });
+  }
+};
+
 // Eliminar un usuario por su id
 const deleteUsuario = async (req, res) => {
   const { id_usuario } = req.params;
@@ -122,6 +141,60 @@ const deleteUsuario = async (req, res) => {
   }
 };
 
+// Crear un nuevo 'delivery'
+const createDelivery = async (req, res) => {
+  const { id_usuario } = req.params;
+
+  try {
+      // Verificar si el usuario existe
+      const [user] = await db.query('SELECT * FROM usuario WHERE id_usuario = ?', [id_usuario]);
+      if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
+
+      // Verificar si ya tiene un registro en 'delivery'
+      const [existingDelivery] = await db.query('SELECT * FROM delivery WHERE id_usuario = ?', [id_usuario]);
+      if (existingDelivery) return res.status(400).json({ message: 'El usuario ya es un delivery' });
+
+      // Asignar valores por defecto para el delivery
+      const defaultProfile = 'deliverydefault.jpg'; // Ruta de la imagen por defecto
+      //const defaultEstado = 'disponible'; // Estado por defecto
+
+      // Insertar en la tabla 'delivery'
+      await db.query(
+          'INSERT INTO delivery (id_usuario, profile, estado, fecha_inicio) VALUES (?, ?, NOW())',
+          [id_usuario, defaultProfile]
+      );
+
+      res.status(201).json({ message: 'Delivery creado exitosamente' });
+  } catch (error) {
+      res.status(500).json({ message: 'Error al crear delivery', error });
+  }
+};
+
+const getDeliverys = async (req, res) => {
+  try {
+      // Obtener todos los usuarios con rol de delivery
+      const deliveries = await db.query(`
+          SELECT u.id_usuario, u.username, d.profile, d.estado, d.fecha_inicio 
+          FROM usuario u 
+          INNER JOIN usuario_rol ur ON u.id_usuario = ur.id_usuario 
+          INNER JOIN delivery d ON u.id_usuario = d.id_usuario 
+          WHERE ur.id_rol = 5
+      `);
+
+      res.status(200).json(deliveries);
+  } catch (error) {
+      res.status(500).json({ message: 'Error al obtener deliveries', error });
+  }
+};
+
 
 module.exports = { 
-  registerUser,  getUserProfile, updateUserProfile, getUsuarios, deleteUsuario};
+  registerUser,  
+  getUserProfile, 
+  updateUserProfile, 
+  getUsuarios, 
+  deleteUsuario,
+  getUsuariosDelivery,
+  createDelivery,
+  getDeliverys
+};

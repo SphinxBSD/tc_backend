@@ -23,6 +23,27 @@ const agregarProductoCarrito = async (req, res) => {
         res.status(500).json({ message: 'Error al agregar producto al carrito' });
     }
   };
+
+// Eliminar producto del carrito
+const eliminarProductoDelCarrito = async (req, res) => {
+  const id_usuario = req.user.id_usuario; // Obtenemos el id del usuario autenticado
+  const id_producto = req.params.id_producto; // Producto a eliminar
+
+  try {
+    // Eliminar el producto del carrito del usuario autenticado
+    const result = await pool.query('DELETE FROM carrito WHERE id_usuario = ? AND id_producto = ?', [id_usuario, id_producto]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Producto no encontrado en el carrito' });
+    }
+
+    res.json({ message: 'Producto eliminado del carrito exitosamente' });
+  } catch (error) {
+    console.error('Error al eliminar producto del carrito:', error);
+    res.status(500).json({ message: 'Error al eliminar producto del carrito' });
+  }
+};
+
   
   // Listar productos en el carrito del usuario
   const listarProductosCarrito = async (req, res) => {
@@ -64,4 +85,5 @@ const agregarProductoCarrito = async (req, res) => {
 module.exports = {
     agregarProductoCarrito,
     listarProductosCarrito,
+    eliminarProductoDelCarrito,
 }
