@@ -117,7 +117,12 @@ const getUsuariosDelivery = async (req, res) => {
           LEFT JOIN persona p ON u.id_persona = p.id_persona
           INNER JOIN usuario_rol ur ON ur.id_usuario = u.id_usuario
           WHERE u.estado = 'activo'
-          AND ur.id_rol = 5;`;
+          AND ur.id_rol = 5
+          AND u.id_usuario NOT IN 
+          (
+            SELECT id_usuario
+              FROM delivery
+          )`;
 
       const [usuarios] = await pool.query(usuariosQuery);
       res.json(usuarios);
@@ -143,49 +148,111 @@ const deleteUsuario = async (req, res) => {
 
 // Crear un nuevo 'delivery'
 const createDelivery = async (req, res) => {
-  const { id_usuario } = req.params;
+  const { id_usuario } = req.body;
 
   try {
-      // Verificar si el usuario existe
-      const [user] = await db.query('SELECT * FROM usuario WHERE id_usuario = ?', [id_usuario]);
-      if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
+      if (!req.file) {
+          return res.status(400).json({ message: 'Debe subir un archivo PDF.' });
+      }
 
-      // Verificar si ya tiene un registro en 'delivery'
-      const [existingDelivery] = await db.query('SELECT * FROM delivery WHERE id_usuario = ?', [id_usuario]);
-      if (existingDelivery) return res.status(400).json({ message: 'El usuario ya es un delivery' });
+      const contractPath = `/uploads/contratos/${req.file.filename}`;
 
-      // Asignar valores por defecto para el delivery
-      const defaultProfile = 'deliverydefault.jpg'; // Ruta de la imagen por defecto
-      //const defaultEstado = 'disponible'; // Estado por defecto
-
-      // Insertar en la tabla 'delivery'
-      await db.query(
-          'INSERT INTO delivery (id_usuario, profile, estado, fecha_inicio) VALUES (?, ?, NOW())',
-          [id_usuario, defaultProfile]
+      // Insertar el registro en la tabla delivery
+      await pool.query(
+          'INSERT INTO delivery (id_usuario, contrato, estado, fecha_inicio) VALUES (?, ?, ?, ?)',
+          [id_usuario, contractPath, 'disponible', new Date()]
       );
 
-      res.status(201).json({ message: 'Delivery creado exitosamente' });
+      res.status(201).json({ message: 'Delivery creado exitosamente con contrato adjunto', contrato: contractPath });
   } catch (error) {
-      res.status(500).json({ message: 'Error al crear delivery', error });
+      res.status(500).json({ message: 'Error al crear el delivery', error });
   }
 };
 
 const getDeliverys = async (req, res) => {
   try {
       // Obtener todos los usuarios con rol de delivery
-      const deliveries = await db.query(`
-          SELECT u.id_usuario, u.username, d.profile, d.estado, d.fecha_inicio 
+      const deliveries = await pool.query(`
+          SELECT u.id_usuario, u.username, d.contrato, d.estado, d.fecha_inicio 
           FROM usuario u 
           INNER JOIN usuario_rol ur ON u.id_usuario = ur.id_usuario 
           INNER JOIN delivery d ON u.id_usuario = d.id_usuario 
           WHERE ur.id_rol = 5
       `);
-
-      res.status(200).json(deliveries);
+      if (deliveries[0].length === 0 || deliveries[0] === undefined) {
+        return res.status(404).json({ message: 'No hay deliveries' });
+      }
+      res.status(200).json(deliveries[0]);
   } catch (error) {
       res.status(500).json({ message: 'Error al obtener deliveries', error });
   }
 };
+
+// Asignar delivery a un pedido
+const asignarDelivery = async (req, res) => {
+  const { id_pedido, id_delivery } = req.body;
+
+  try {
+    const [result] = await pool.query(
+      'UPDATE pedidos SET id_delivery = ?, estado = "asignado" WHERE id_pedido = ?', 
+      [id_delivery, id_pedido]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Pedido no encontrado' });
+    }
+
+    res.json({ message: 'Delivery asignado exitosamente' });
+  } catch (error) {
+    console.error('Error al asignar delivery:', error);
+    res.status(500).json({ message: 'Error al asignar delivery' });
+  }
+};
+
+// Cambiar estado de pedido
+const cambiarEstadoPedido = async (req, res) => {
+  const { id_pedido, estado } = req.body;
+
+  try {
+    const [result] = await pool.query(
+      'UPDATE pedidos SET estado = ? WHERE id_pedido = ?', 
+      [estado, id_pedido]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Pedido no encontrado' });
+    }
+
+    res.json({ message: 'Estado de pedido actualizado' });
+  } catch (error) {
+    console.error('Error al actualizar el estado del pedido:', error);
+    res.status(500).json({ message: 'Error al actualizar el estado del pedido' });
+  }
+};
+
+  // Obtener pedidos por usuario
+  const obtenerPedidosPorUsuario = async (req, res) => {
+    const id_usuario = req.user.id_usuario;
+
+    try {
+      const [pedidos] = await pool.query(
+        `
+        SELECT p.id_pedido, p.estado, p.fecha_pedido, prod.nombre_producto, dp.precio_unitario, dp.cantidad
+        FROM pedidos p
+        INNER JOIN detalle_pedido dp ON dp.id_pedido = p.id_pedido
+        INNER JOIN producto prod ON prod.id_producto = dp.id_producto
+        WHERE p.id_usuario = ?
+        AND p.estado != 'cancelado'
+        AND p.estado != 'entregado'
+        `, 
+        [id_usuario]
+      );
+      res.json(pedidos);
+    } catch (error) {
+      console.error('Error al obtener pedidos del usuario:', error);
+      res.status(500).json({ message: 'Error al obtener pedidos' });
+    }
+  };
 
 
 module.exports = { 
@@ -196,5 +263,8 @@ module.exports = {
   deleteUsuario,
   getUsuariosDelivery,
   createDelivery,
-  getDeliverys
+  getDeliverys,
+  asignarDelivery,
+  cambiarEstadoPedido,
+  obtenerPedidosPorUsuario
 };

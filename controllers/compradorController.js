@@ -1,7 +1,7 @@
 const pool = require('../config/db');
 
 // Confirmar compra (crear pedido)
-const confirmarCompra = async (req, res) => {
+const confirmarPedido = async (req, res) => {
     const id_usuario = req.user.id_usuario;
   
     try {
@@ -64,6 +64,7 @@ const obtenerHistorialCompras = async (req, res) => {
         INNER JOIN detalle_pedido dp ON dp.id_pedido = p.id_pedido
         INNER JOIN producto pr ON pr.id_producto = dp.id_producto
         WHERE p.id_usuario = ?
+        AND p.estado = 'entregado'
         ORDER BY p.fecha_pedido DESC`,
         [id_usuario]
       );
@@ -108,8 +109,12 @@ const obtenerHistorialCompras = async (req, res) => {
   };
 
 
+
+
+
 module.exports = {
-    confirmarCompra,
-    obtenerHistorialCompras
+    confirmarPedido,
+    obtenerHistorialCompras,
+    
     
 }
