@@ -9,7 +9,9 @@ const { registerUser,
     getDeliverys,
     asignarDelivery,
     cambiarEstadoPedido,
-    obtenerPedidosPorUsuario
+    obtenerPedidosPorUsuario,
+    obtenerAllPedidos,
+    obtenerPedidosPorDelivery
 
  } = require('../controllers/userController');
 const { authenticateToken } = require('../middleware/auth');
@@ -72,5 +74,9 @@ router.put('/asignar-delivery', authenticateToken, asignarDelivery);
 router.put('/cambiar-estado-pedido', authenticateToken, cambiarEstadoPedido);
 
 router.get('/pedidos', authenticateToken, obtenerPedidosPorUsuario);
+
+router.get('/pedidos/delivery', authenticateToken, obtenerPedidosPorDelivery);
+
+router.get('/all-pedidos', authenticateToken, obtenerAllPedidos);
 
 module.exports = router;

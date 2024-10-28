@@ -173,7 +173,7 @@ const getDeliverys = async (req, res) => {
   try {
       // Obtener todos los usuarios con rol de delivery
       const deliveries = await pool.query(`
-          SELECT u.id_usuario, u.username, d.contrato, d.estado, d.fecha_inicio 
+          SELECT u.id_usuario, d.id_delivery, u.username, d.contrato, d.estado, d.fecha_inicio 
           FROM usuario u 
           INNER JOIN usuario_rol ur ON u.id_usuario = ur.id_usuario 
           INNER JOIN delivery d ON u.id_usuario = d.id_usuario 
@@ -189,17 +189,46 @@ const getDeliverys = async (req, res) => {
 };
 
 // Asignar delivery a un pedido
+// const asignarDelivery = async (req, res) => {
+//   const { id_pedido, id_delivery } = req.body;
+
+//   try {
+//     const [result] = await pool.query(
+//       'UPDATE pedidos SET id_delivery = ?, estado = "asignado" WHERE id_pedido = ?', 
+//       [id_delivery, id_pedido]
+//     );
+
+//     if (result.affectedRows === 0) {
+//       return res.status(404).json({ message: 'Pedido no encontrado' });
+//     }
+
+//     res.json({ message: 'Delivery asignado exitosamente' });
+//   } catch (error) {
+//     console.error('Error al asignar delivery:', error);
+//     res.status(500).json({ message: 'Error al asignar delivery' });
+//   }
+// };
+
+
+// Asignar delivery a pedido y actualizar estado del delivery si tiene 10 pedidos
 const asignarDelivery = async (req, res) => {
   const { id_pedido, id_delivery } = req.body;
 
   try {
-    const [result] = await pool.query(
-      'UPDATE pedidos SET id_delivery = ?, estado = "asignado" WHERE id_pedido = ?', 
-      [id_delivery, id_pedido]
+    // Asignar el delivery al pedido
+    await pool.query('UPDATE pedidos SET id_delivery = ?, estado = "asignado" WHERE id_pedido = ?', [id_delivery, id_pedido]);
+
+    // Contar los pedidos asignados al delivery
+    const [pedidosAsignados] = await pool.query(
+      'SELECT COUNT(*) AS total FROM pedidos WHERE id_delivery = ? AND estado IN ("asignado", "encurso")',
+      [id_delivery]
     );
 
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ message: 'Pedido no encontrado' });
+    const totalPedidos = pedidosAsignados[0].total;
+
+    // Actualizar el estado del delivery a "ocupado" si tiene 10 pedidos
+    if (totalPedidos >= 10) {
+      await pool.query('UPDATE delivery SET estado = "ocupado" WHERE id_usuario = ?', [id_delivery]);
     }
 
     res.json({ message: 'Delivery asignado exitosamente' });
@@ -254,6 +283,66 @@ const cambiarEstadoPedido = async (req, res) => {
     }
   };
 
+    // Obtener pedidos por usuario
+    const obtenerPedidosPorDelivery = async (req, res) => {
+      const id_usuario = req.user.id_usuario;
+      
+  
+      try {
+        const [id_delivery_temp] = await pool.query(
+          `
+          SELECT id_delivery
+          FROM delivery
+          WHERE id_usuario = ?
+          `, 
+          [id_usuario]
+        );
+
+        const id_delivery = id_delivery_temp[0].id_delivery;
+        console.log(id_delivery);
+
+        const [pedidos] = await pool.query(
+          `
+          SELECT p.id_pedido, p.estado, p.fecha_pedido, prod.nombre_producto, dp.precio_unitario, dp.cantidad
+          FROM pedidos p
+          INNER JOIN detalle_pedido dp ON dp.id_pedido = p.id_pedido
+          INNER JOIN producto prod ON prod.id_producto = dp.id_producto
+          WHERE p.id_delivery = ?
+          AND p.estado != 'cancelado'
+          AND p.estado != 'entregado'
+          `, 
+          [id_delivery]
+        );
+        res.json(pedidos);
+      } catch (error) {
+        console.error('Error al obtener pedidos del usuario:', error);
+        res.status(500).json({ message: 'Error al obtener pedidos' });
+      }
+    };
+
+
+  // Obtener pedidos por usuario
+  const obtenerAllPedidos = async (req, res) => {
+    // const id_usuario = req.user.id_usuario;
+
+    try {
+      const [pedidos] = await pool.query(
+        `
+        SELECT p.id_pedido, p.estado, p.fecha_pedido, prod.nombre_producto, dp.precio_unitario, dp.cantidad
+        FROM pedidos p
+        INNER JOIN detalle_pedido dp ON dp.id_pedido = p.id_pedido
+        INNER JOIN producto prod ON prod.id_producto = dp.id_producto
+        WHERE p.estado != 'cancelado'
+        AND p.estado != 'entregado'
+        `
+      );
+      res.json(pedidos);
+    } catch (error) {
+      console.error('Error al obtener pedidos del usuario:', error);
+      res.status(500).json({ message: 'Error al obtener pedidos' });
+    }
+  };
+
 
 module.exports = { 
   registerUser,  
@@ -266,5 +355,7 @@ module.exports = {
   getDeliverys,
   asignarDelivery,
   cambiarEstadoPedido,
-  obtenerPedidosPorUsuario
+  obtenerPedidosPorUsuario,
+  obtenerAllPedidos,
+  obtenerPedidosPorDelivery
 };
