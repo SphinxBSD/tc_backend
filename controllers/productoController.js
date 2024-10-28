@@ -1,4 +1,5 @@
 const pool = require('../config/db'); // Conexión a la base de datos
+const { validateCompradorRol } = require('../services/reviewsService')
 
 const registerProduct = async (req, res, next) => {
     const {
@@ -36,16 +37,9 @@ const registerProduct = async (req, res, next) => {
         // Procesar las rutas de las fotos
         const fotosProcesadas = req.files.map(file => file.path.replace(/\\/g, '/')); // Reemplazar \ por /
         const fotosJSON = JSON.stringify(fotosProcesadas);
-        console.log('========================')
-        console.log(fotosJSON);
-        console.log(fotosProcesadas);
-        // console.log( "id_categoria: ", id_categoria);
-        // console.log( "nombre_producto: ", nombre_producto);
-        // console.log( "descripcion: ", descripcion);
-        // console.log( "precio: ", precio);
-        // console.log( "fotos: ", JSON.stringify(fotosPaths));
-        // console.log( "id_elaboracion: ", id_elaboracion);
-        // console.log( "idUsuario: ", idUsuario);
+        // console.log('========================')
+        // console.log(fotosJSON);
+        // console.log(fotosProcesadas);
 
 
         const [productoResult] = await pool.query(
@@ -77,13 +71,6 @@ const registerProduct = async (req, res, next) => {
           id_usuario: idUsuario,
           id_inventario
         });
-  
-    //   } catch (err) {
-    //     await connection.rollback();
-    //     throw err;
-    //   } finally {
-    //     connection.release();
-    //   }
   
     } catch (err) {
       next(err);
@@ -161,12 +148,6 @@ const getProductos = async (req, res) => {
           fotos: fotosArray
         };
       });
-      // Parsear las fotos de JSON a array de strings
-    //   const productos = rows.map(producto => ({
-    //     ...producto,
-    //     fotos: JSON.parse(producto.fotos)
-    //   }));
-  
       res.json(productos);
     } catch (err) {
       console.error(err.message);
@@ -302,6 +283,51 @@ const editarProducto = async (req, res) => {
   }
 };
 
+const addReview = async (req, res) => {
+  const id_usuario = req.user.id_usuario;
+  const { id_producto, rating, description } = req.body;
+
+
+  try {
+      // Verificación de rol de usuario comprador
+      const isBuyer = await validateCompradorRol(id_usuario);
+      if (!isBuyer) return res.status(403).json({ message: 'Unauthorized' });
+
+      const result = await pool.query(
+          'INSERT INTO reviews (id_producto, id_usuario, rating, description) VALUES (?, ?, ?, ?)',
+          [id_producto, id_usuario, rating, description]
+      );
+      res.status(201).json({ message: 'Review added successfully', reviewId: result.insertId });
+  } catch (error) {
+      res.status(500).json({ message: 'Error adding review', error });
+  }
+};
+
+
+const getProductReviews = async (req, res) => {
+  const { id_producto } = req.params;
+  // console.log(id_producto);
+  try {
+      const reviews = await pool.query(`
+          SELECT u.id_usuario, r.rating, r.description, r.review_date 
+          FROM reviews r 
+          JOIN usuario u ON r.id_usuario = u.id_usuario 
+          WHERE r.id_producto = ?`, [id_producto]
+      );
+
+      const avgRating = await pool.query(`
+          SELECT AVG(rating) AS avgRating 
+          FROM reviews 
+          WHERE id_producto = ?`, [id_producto]
+      );
+
+      res.json({ reviews, avgRating: avgRating[0] || null });
+  } catch (error) {
+      res.status(500).json({ message: 'Error fetching reviews', error });
+  }
+};
+
+
   module.exports = {
     registerProduct,
     getCategorias,
@@ -309,4 +335,6 @@ const editarProducto = async (req, res) => {
     getProductos,
     getProductosByUser,
     editarProducto,
+    addReview,
+    getProductReviews
 };

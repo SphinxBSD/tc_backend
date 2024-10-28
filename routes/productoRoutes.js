@@ -8,7 +8,9 @@ const { registerProduct,
     getCategorias,
     getElaboraciones,
     getProductos,
-    getProductosByUser
+    getProductosByUser,
+    addReview,
+    getProductReviews,
  } = require('../controllers/productoController');
 
 // Configuración de Multer para subir fotos
@@ -52,5 +54,11 @@ router.get('/mostrar', getProductos);
 
 // Obtener productos
 router.get('/mostrarByUser', authenticateToken, getProductosByUser);
+
+// Ruta para los reviews
+router.post('/addReview', authenticateToken, addReview);
+
+// Ruta para listar los reviews de los productos
+router.get('/reviews/:id_producto', getProductReviews);
 
 module.exports = router;
