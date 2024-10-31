@@ -10,6 +10,14 @@ const registerComunidad = async (req, res) => {
         return res.status(400).json({ error: 'Es necesario subir un archivo PDF.' });
     }
 
+    // Preguntar si el nombre de la comunidad ya existe
+    const [comunidadExistente] = await pool.query(
+        `SELECT * FROM comunidad WHERE nombre = ?`, [nombre]
+    );
+    if (comunidadExistente.length > 0) {
+        return res.status(400).json({ error: 'Ya existe una comunidad con ese nombre.' });
+    }
+
     const pdfUrl = `/uploads/${req.file.filename}`; // Ruta del archivo PDF en el servidor
 
     try {
