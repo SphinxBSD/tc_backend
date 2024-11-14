@@ -109,12 +109,14 @@ const getProductos = async (req, res) => {
           p.nombre_producto,
           p.descripcion,
           p.precio,
+          i.cantidad,
           p.fotos,
           c.nombre AS categoria,
           e.tipo AS elaboracion
         FROM producto p
         JOIN categoria c ON p.id_categoria = c.id_categoria
         JOIN elaboracion e ON p.id_elaboracion = e.id_elaboracion
+        JOIN inventario i ON i.id_inventario = p.id_inventario
         WHERE 1=1
       `;
       let params = [];
@@ -168,12 +170,14 @@ const getProductosByUser = async (req, res) => {
           p.nombre_producto,
           p.descripcion,
           p.precio,
+          i.cantidad,
           p.fotos,
           c.nombre AS categoria,
           e.tipo AS elaboracion
         FROM producto p
         JOIN categoria c ON p.id_categoria = c.id_categoria
         JOIN elaboracion e ON p.id_elaboracion = e.id_elaboracion
+        JOIN inventario i ON i.id_inventario = p.id_inventario
         WHERE p.id_usuario = ?
       `;
       let params = [id_usuario];

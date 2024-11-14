@@ -173,7 +173,7 @@ const getDeliverys = async (req, res) => {
   try {
       // Obtener todos los usuarios con rol de delivery
       const deliveries = await pool.query(`
-          SELECT u.id_usuario, d.id_delivery, u.username, d.contrato, d.estado, d.fecha_inicio 
+          SELECT u.id_usuario, d.id_delivery, u.username, d.contrato, d.estado, d.fecha_inicio, d.turno
           FROM usuario u 
           INNER JOIN usuario_rol ur ON u.id_usuario = ur.id_usuario 
           INNER JOIN delivery d ON u.id_usuario = d.id_usuario 
@@ -187,27 +187,6 @@ const getDeliverys = async (req, res) => {
       res.status(500).json({ message: 'Error al obtener deliveries', error });
   }
 };
-
-// Asignar delivery a un pedido
-// const asignarDelivery = async (req, res) => {
-//   const { id_pedido, id_delivery } = req.body;
-
-//   try {
-//     const [result] = await pool.query(
-//       'UPDATE pedidos SET id_delivery = ?, estado = "asignado" WHERE id_pedido = ?', 
-//       [id_delivery, id_pedido]
-//     );
-
-//     if (result.affectedRows === 0) {
-//       return res.status(404).json({ message: 'Pedido no encontrado' });
-//     }
-
-//     res.json({ message: 'Delivery asignado exitosamente' });
-//   } catch (error) {
-//     console.error('Error al asignar delivery:', error);
-//     res.status(500).json({ message: 'Error al asignar delivery' });
-//   }
-// };
 
 
 // Asignar delivery a pedido y actualizar estado del delivery si tiene 10 pedidos
@@ -266,10 +245,11 @@ const cambiarEstadoPedido = async (req, res) => {
     try {
       const [pedidos] = await pool.query(
         `
-        SELECT p.id_pedido, p.estado, p.fecha_pedido, prod.nombre_producto, dp.precio_unitario, dp.cantidad
+        SELECT p.id_pedido, p.estado, p.fecha_pedido, prod.nombre_producto, dp.precio_unitario, dp.cantidad, d.telefono
         FROM pedidos p
         INNER JOIN detalle_pedido dp ON dp.id_pedido = p.id_pedido
         INNER JOIN producto prod ON prod.id_producto = dp.id_producto
+        INNER JOIN delivery d ON d.id_delivery = p.id_delivery
         WHERE p.id_usuario = ?
         AND p.estado != 'cancelado'
         AND p.estado != 'entregado'

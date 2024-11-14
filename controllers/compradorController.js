@@ -3,6 +3,10 @@ const pool = require('../config/db');
 // Confirmar compra (crear pedido)
 const confirmarPedido = async (req, res) => {
     const id_usuario = req.user.id_usuario;
+    const latitud = req.body.latitud;
+    const longitud = req.body.longitud;
+    // console.log(latitud);
+    // console.log(longitud);
   
     try {
         // 1. Obtener los productos del carrito
@@ -24,7 +28,7 @@ const confirmarPedido = async (req, res) => {
         });
   
         // 3. Crear el pedido en la tabla 'pedidos'
-        const [result] = await pool.query('INSERT INTO pedidos (id_usuario, total) VALUES (?, ?)', [id_usuario, total]);
+        const [result] = await pool.query('INSERT INTO pedidos (id_usuario, total, latitud, longitud) VALUES (?, ?, ?, ?)', [id_usuario, total, latitud, longitud]);
   
         const id_pedido = result.insertId; // Obtenemos el id del pedido recién insertado
   
