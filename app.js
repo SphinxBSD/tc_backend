@@ -7,7 +7,6 @@ const artesanoRoutes = require('./routes/artesanoRoutes');
 const productoRoutes = require('./routes/productoRoutes');
 const carritoRoutes = require('./routes/carritoRoutes');
 const compradorRoutes = require('./routes/compradorRoutes')
-const pool = require('./config/db'); 
 const cors = require('cors');
 const path = require('path');
 
@@ -24,7 +23,8 @@ app.use('/api/productos', productoRoutes);
 app.use('/api/carrito', carritoRoutes);
 app.use('/api/comprador', compradorRoutes);
 
-const PORT = process.env.PORT || 3000;
+const config = require('./config/config');
+const PORT = config.PORT;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
