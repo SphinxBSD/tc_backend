@@ -138,7 +138,8 @@ const getProductos = async (req, res) => {
         let fotosArray;
         try {
             for (let i = 0; i < producto.fotos.length; i++) {
-                producto.fotos[i] = 'http://localhost:8080/'+producto.fotos[i];
+                // producto.fotos[i] = 'http://localhost:8080/'+producto.fotos[i];
+                producto.fotos[i] = 'https://tcbackend-production-d459.up.railway.app/'+producto.fotos[i];
             }
           fotosArray = producto.fotos;
         } catch (e) {
@@ -190,7 +191,9 @@ const getProductosByUser = async (req, res) => {
         let fotosArray;
         try {
             for (let i = 0; i < producto.fotos.length; i++) {
-                producto.fotos[i] = 'http://localhost:8080/'+producto.fotos[i];
+                // producto.fotos[i] = 'http://localhost:8080/'+producto.fotos[i];
+                producto.fotos[i] = 'https://tcbackend-production-d459.up.railway.app/' + producto.fotos[i];
+
             }
           fotosArray = producto.fotos;
         } catch (e) {

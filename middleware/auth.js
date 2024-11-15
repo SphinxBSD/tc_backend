@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const config = require('../config/config');
 // Middleware para autenticar el token JWT
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];  // El token debe estar en el encabezado "Authorization"
