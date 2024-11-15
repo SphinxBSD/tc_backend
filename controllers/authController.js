@@ -14,12 +14,12 @@ const loginUser = async (req, res) => {
 
   try {
     // 1. Verificar reCaptcha v3 con Google
-    const captchaVerificationUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${config.RECAPTCHA_SECRET_KEY}&response=${tokenCaptcha}`;
-    const captchaResponse = await axios.post(captchaVerificationUrl);
+    // const captchaVerificationUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${config.RECAPTCHA_SECRET_KEY}&response=${tokenCaptcha}`;
+    // const captchaResponse = await axios.post(captchaVerificationUrl);
 
-    if (!captchaResponse.data.success || captchaResponse.data.score < 0.5) {
-      return res.status(400).json({ message: 'Falló la verificación del captcha' });
-    }
+    // if (!captchaResponse.data.success || captchaResponse.data.score < 0.5) {
+    //   return res.status(400).json({ message: 'Falló la verificación del captcha' });
+    // }
 
     // 2. Buscar al usuario por username
     const user = await findUsuarioByUsername(username);
