@@ -7,7 +7,7 @@ const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
-const config = require('./config');
+const config = require('../config/config');
 
 const loginUser = async (req, res) => {
   const { username, password, tokenCaptcha } = req.body;
