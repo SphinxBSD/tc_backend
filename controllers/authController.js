@@ -7,13 +7,14 @@ const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const config = require('./config');
 
 const loginUser = async (req, res) => {
   const { username, password, tokenCaptcha } = req.body;
 
   try {
     // 1. Verificar reCaptcha v3 con Google
-    const captchaVerificationUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${tokenCaptcha}`;
+    const captchaVerificationUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${config.RECAPTCHA_SECRET_KEY}&response=${tokenCaptcha}`;
     const captchaResponse = await axios.post(captchaVerificationUrl);
 
     if (!captchaResponse.data.success || captchaResponse.data.score < 0.5) {
@@ -35,7 +36,7 @@ const loginUser = async (req, res) => {
     // 4. Generar un JWT si es necesario
     const token = jwt.sign(
       { id_usuario: user.id_usuario, username: user.username },
-      process.env.JWT_SECRET,
+      config.JWT_SECRET,
       { expiresIn: '1h' }
     );
 
@@ -82,14 +83,14 @@ const recoverPassword = async (req, res) => {
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: process.env.EMAIL_USER,  // Tu correo electrónico
-        pass: process.env.EMAIL_PASS  // Contraseña del correo electrónico
+        user: config.EMAIL_USER,  // Tu correo electrónico
+        pass: config.EMAIL_PASS  // Contraseña del correo electrónico
       }
     });
 
     // 7. Enviar el correo con la nueva contraseña
     const mailOptions = {
-      from: process.env.EMAIL_USER,
+      from: config.EMAIL_USER,
       to: user.email,
       subject: 'Recuperación de Contraseña',
       text: `Hola ${user.username},\n\nTu nueva contraseña es: ${newPassword}\n\nPor favor, cambia esta contraseña una vez que hayas iniciado sesión.`
